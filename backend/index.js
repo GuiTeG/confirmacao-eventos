@@ -416,3 +416,60 @@ const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`Backend rodando na porta ${port}`);
 });
+
+// GET /api/eventos/:id/confirmacoes?usuarioId=1
+// Lista quem confirmou presença naquele evento (só o dono pode ver)
+app.get("/api/eventos/:id/confirmacoes", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { usuarioId } = req.query;
+
+    if (!usuarioId) {
+      return res
+        .status(400)
+        .json({ error: "usuarioId é obrigatório na query string" });
+    }
+
+    // Confere se esse evento é do usuário
+    const donoRows = await sql`
+      SELECT usuario_id
+      FROM eventos
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+
+    const dono = donoRows[0];
+
+    if (!dono) {
+      return res.status(404).json({ error: "Evento não encontrado" });
+    }
+
+    if (dono.usuario_id !== Number(usuarioId)) {
+      return res
+        .status(403)
+        .json({ error: "Você não tem permissão para ver este evento" });
+    }
+
+    // Busca confirmações vinculadas a esse evento
+    const confirmacoes = await sql`
+      SELECT
+        id,
+        nome,
+        email,
+        telefone,
+        status,
+        observacao,
+        created_at
+      FROM confirmacoes
+      WHERE origem = ${"evento-" + id}
+      ORDER BY created_at DESC
+    `;
+
+    return res.json({ confirmacoes });
+  } catch (err) {
+    console.error("Erro ao listar confirmações:", err);
+    return res
+      .status(500)
+      .json({ error: "Erro ao listar confirmações do evento" });
+  }
+});

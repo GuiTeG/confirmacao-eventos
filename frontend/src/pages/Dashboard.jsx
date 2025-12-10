@@ -25,6 +25,11 @@ import { ptBR } from "date-fns/locale";
 import { listarEventos, deletarEvento } from "../lib/utils";
 import { useToast } from "../hooks/use-toast";
 
+// Base da API (mesmo padrão do AuthContext / CreateEvent)
+const API_BASE_URL =
+  process.env.REACT_APP_BACKEND_URL ||
+  "https://confirmacao-eventos.onrender.com";
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +38,12 @@ const Dashboard = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+
+  // Estados para confirmações
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [confirmations, setConfirmations] = useState([]);
+  const [loadingConfirmations, setLoadingConfirmations] = useState(false);
+  const [errorConfirmations, setErrorConfirmations] = useState("");
 
   useEffect(() => {
     loadEvents();
@@ -100,6 +111,44 @@ const Dashboard = () => {
       title: "Em breve",
       description: "Tela de edição ainda vamos montar 😄",
     });
+  };
+
+  // Carregar confirmações de um evento (somente do dono)
+  const handleViewConfirmations = async (event) => {
+    if (!user?.id) return;
+
+    // Se clicar de novo no mesmo card, esconde
+    if (selectedEventId === event.id) {
+      setSelectedEventId(null);
+      setConfirmations([]);
+      setErrorConfirmations("");
+      return;
+    }
+
+    try {
+      setSelectedEventId(event.id);
+      setLoadingConfirmations(true);
+      setErrorConfirmations("");
+      setConfirmations([]);
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/eventos/${event.id}/confirmacoes?usuarioId=${user.id}`
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao carregar confirmações");
+      }
+
+      setConfirmations(data.confirmacoes || []);
+    } catch (err) {
+      console.error("Erro ao carregar confirmações:", err);
+      setErrorConfirmations(
+        err.message || "Não foi possível carregar as confirmações."
+      );
+    } finally {
+      setLoadingConfirmations(false);
+    }
   };
 
   return (
@@ -190,8 +239,7 @@ const Dashboard = () => {
             {events.map((event) => (
               <Card
                 key={event.id}
-                className="hover:shadow-xl transition-all duration-300 cursor-pointer border-l-4 border-l-orange-500 group"
-                onClick={() => navigate(`/evento/${event.id}`)}
+                className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-orange-500 group"
               >
                 <CardHeader className="flex justify-between items-start gap-4">
                   <div>
@@ -249,6 +297,72 @@ const Dashboard = () => {
                       Limite: {event.maxGuests}
                     </div>
                   </div>
+
+                  {/* Botão para ver confirmações */}
+                  <div className="pt-3 border-t flex justify-between items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewConfirmations(event)}
+                    >
+                      {selectedEventId === event.id
+                        ? "Esconder confirmações"
+                        : "Ver confirmações"}
+                    </Button>
+                  </div>
+
+                  {/* Lista de confirmações do evento selecionado */}
+                  {selectedEventId === event.id && (
+                    <div className="mt-3 space-y-2">
+                      {loadingConfirmations && (
+                        <p className="text-sm text-gray-500">
+                          Carregando confirmações...
+                        </p>
+                      )}
+
+                      {errorConfirmations && (
+                        <p className="text-sm text-red-500">
+                          {errorConfirmations}
+                        </p>
+                      )}
+
+                      {!loadingConfirmations &&
+                        !errorConfirmations &&
+                        confirmations.length === 0 && (
+                          <p className="text-sm text-gray-500">
+                            Ainda não há confirmações para este evento.
+                          </p>
+                        )}
+
+                      {!loadingConfirmations &&
+                        confirmations.map((c) => (
+                          <div
+                            key={c.id}
+                            className="text-sm border rounded-md p-2 bg-muted/40"
+                          >
+                            <p>
+                              <strong>{c.nome}</strong>{" "}
+                              {c.telefone && (
+                                <span className="text-xs text-gray-500">
+                                  · {c.telefone}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Status: {c.status || "confirmado"}
+                            </p>
+                            {c.observacao && (
+                              <p className="text-xs mt-1">{c.observacao}</p>
+                            )}
+                            {c.created_at && (
+                              <p className="text-[11px] text-gray-400 mt-1">
+                                {new Date(c.created_at).toLocaleString("pt-BR")}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
