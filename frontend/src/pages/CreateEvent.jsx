@@ -1,28 +1,44 @@
 // src/pages/CreateEvent.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { ArrowLeft, Calendar, Clock, MapPin, Users, FileText } from 'lucide-react';
-import { useToast } from '../hooks/use-toast';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  FileText,
+} from "lucide-react";
+import { useToast } from "../hooks/use-toast";
 
+// <<< AQUI É O PONTO IMPORTANTE >>>
 const API_BASE_URL =
-  process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+  process.env.REACT_APP_BACKEND_URL ||
+  "https://confirmacao-eventos.onrender.com";
+// <<< FIM DO AJUSTE >>>
 
 const CreateEvent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    date: '',
-    time: '',
-    location: '',
-    description: '',
-    maxGuests: '',
+    title: "",
+    date: "",
+    time: "",
+    location: "",
+    description: "",
+    maxGuests: "",
   });
 
   const handleChange = (e) => {
@@ -37,9 +53,9 @@ const CreateEvent = () => {
     setLoading(true);
 
     try {
-      const savedUser = localStorage.getItem('usuario');
+      const savedUser = localStorage.getItem("usuario");
       if (!savedUser) {
-        throw new Error('Você precisa estar logado para criar eventos.');
+        throw new Error("Você precisa estar logado para criar eventos.");
       }
       const usuario = JSON.parse(savedUser);
 
@@ -54,29 +70,29 @@ const CreateEvent = () => {
       };
 
       const res = await fetch(`${API_BASE_URL}/api/eventos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Erro ao criar evento');
+        throw new Error(data.error || "Erro ao criar evento");
       }
 
       toast({
-        title: 'Evento criado!',
+        title: "Evento criado!",
         description:
-          'Seu evento foi criado com sucesso. Compartilhe o link com seus convidados!',
+          "Seu evento foi criado com sucesso. Compartilhe o link com seus convidados!",
       });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error.message || 'Ocorreu um erro ao criar o evento.',
-        variant: 'destructive',
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao criar o evento.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -87,14 +103,14 @@ const CreateEvent = () => {
     <div
       className="min-h-screen"
       style={{
-        background: 'linear-gradient(to bottom, #FFF5F0 0%, #FFFFFF 100%)',
+        background: "linear-gradient(to bottom, #FFF5F0 0%, #FFFFFF 100%)",
       }}
     >
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <Button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate("/dashboard")}
             variant="ghost"
             className="text-white hover:bg-white/10 mb-4"
           >
@@ -240,7 +256,7 @@ const CreateEvent = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate("/dashboard")}
                   className="flex-1 h-12"
                 >
                   Cancelar
@@ -250,7 +266,7 @@ const CreateEvent = () => {
                   disabled={loading}
                   className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  {loading ? 'Criando...' : 'Criar Evento'}
+                  {loading ? "Criando..." : "Criar Evento"}
                 </Button>
               </div>
             </form>
