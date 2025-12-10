@@ -19,13 +19,13 @@ import {
   Clock,
   Trash2,
   Pencil,
+  Link2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { listarEventos, deletarEvento } from "../lib/utils";
 import { useToast } from "../hooks/use-toast";
 
-// Base da API (mesmo padrão do AuthContext / CreateEvent)
 const API_BASE_URL =
   process.env.REACT_APP_BACKEND_URL ||
   "https://confirmacao-eventos.onrender.com";
@@ -39,7 +39,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Estados para confirmações
+  // confirmações
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [confirmations, setConfirmations] = useState([]);
   const [loadingConfirmations, setLoadingConfirmations] = useState(false);
@@ -73,7 +73,6 @@ const Dashboard = () => {
   };
 
   const getTotalConfirmations = (event) => {
-    // backend devolve "confirmedCount"
     return event.confirmedCount ?? 0;
   };
 
@@ -113,11 +112,10 @@ const Dashboard = () => {
     });
   };
 
-  // Carregar confirmações de um evento (somente do dono)
+  // Ver confirmações do evento
   const handleViewConfirmations = async (event) => {
     if (!user?.id) return;
 
-    // Se clicar de novo no mesmo card, esconde
     if (selectedEventId === event.id) {
       setSelectedEventId(null);
       setConfirmations([]);
@@ -148,6 +146,45 @@ const Dashboard = () => {
       );
     } finally {
       setLoadingConfirmations(false);
+    }
+  };
+
+  // Copiar link do convite
+  const handleCopyLink = (event) => {
+    try {
+      const origin = window.location.origin;
+      const link = `${origin}/evento/${event.id}`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(
+          () => {
+            toast({
+              title: "Link copiado!",
+              description: "É só colar no WhatsApp ou onde quiser 🎉",
+            });
+          },
+          () => {
+            toast({
+              title: "Erro ao copiar",
+              description: `Link do evento: ${link}`,
+              variant: "destructive",
+            });
+          }
+        );
+      } else {
+        // fallback simples
+        toast({
+          title: "Link do evento",
+          description: link,
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao gerar link:", err);
+      toast({
+        title: "Erro ao gerar link",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -251,7 +288,6 @@ const Dashboard = () => {
                     </CardDescription>
                   </div>
 
-                  {/* Ações: editar / excluir */}
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -298,8 +334,8 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Botão para ver confirmações */}
-                  <div className="pt-3 border-t flex justify-between items-center">
+                  {/* Ações do evento */}
+                  <div className="pt-3 border-t flex flex-wrap gap-2 justify-between items-center">
                     <Button
                       variant="outline"
                       size="sm"
@@ -309,9 +345,19 @@ const Dashboard = () => {
                         ? "Esconder confirmações"
                         : "Ver confirmações"}
                     </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-orange-600 hover:bg-orange-50"
+                      onClick={() => handleCopyLink(event)}
+                    >
+                      <Link2 className="w-4 h-4 mr-1" />
+                      Copiar link do convite
+                    </Button>
                   </div>
 
-                  {/* Lista de confirmações do evento selecionado */}
+                  {/* Lista de confirmações */}
                   {selectedEventId === event.id && (
                     <div className="mt-3 space-y-2">
                       {loadingConfirmations && (
@@ -356,7 +402,9 @@ const Dashboard = () => {
                             )}
                             {c.created_at && (
                               <p className="text-[11px] text-gray-400 mt-1">
-                                {new Date(c.created_at).toLocaleString("pt-BR")}
+                                {new Date(c.created_at).toLocaleString(
+                                  "pt-BR"
+                                )}
                               </p>
                             )}
                           </div>
