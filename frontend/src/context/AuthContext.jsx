@@ -2,8 +2,12 @@
 import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
+
+// Usa variável de ambiente se existir (Vercel),
+// senão cai no backend da Render como padrão.
 const API_BASE_URL =
-  process.env.REACT_APP_BACKEND_URL || "http://localhost:4000";
+  process.env.REACT_APP_BACKEND_URL ||
+  "https://confirmacao-eventos.onrender.com";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -29,7 +33,10 @@ export const AuthProvider = ({ children }) => {
       console.log("LOGIN RESPONSE ->", res.status, data);
 
       if (!res.ok) {
-        return { success: false, message: data.error || "Erro ao fazer login" };
+        return {
+          success: false,
+          message: data.error || "Erro ao fazer login",
+        };
       }
 
       setUser(data.usuario);
@@ -54,6 +61,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       const data = await res.json();
+      console.log("REGISTER RESPONSE ->", res.status, data);
 
       if (!res.ok) {
         return {
@@ -83,7 +91,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
