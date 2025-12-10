@@ -1,0 +1,20 @@
+# Dependências
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Builds
+build/
+dist/
+frontend/build/
+backend/dist/
+
+# Configs locais / ambiente
+.env
+.env.local
+frontend/.env
+backend/.env
+
+# Outros arquivos temporários
+.DS_Store
+Thumbs.db
